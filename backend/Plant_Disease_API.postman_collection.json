@@ -458,6 +458,7 @@
                   "    var json = pm.response.json();",
                   "    pm.expect(json.user).to.have.property('displayName');",
                   "    pm.expect(json.stats).to.have.property('totalScans');",
+                  "    pm.expect(json.stats).to.have.property('plantsScanned');",
                   "});"
                 ]
               }
@@ -476,14 +477,55 @@
               "host": ["{{base_url}}"],
               "path": ["api", "users", "profile"]
             },
-            "description": "Get the current user's profile along with statistics:\n- Total scans count\n- Most frequently detected disease"
+            "description": "Get the current user's profile with stats for the Profile Screen."
           },
           "response": [
             {
               "name": "200 — Success",
               "status": "OK",
               "code": 200,
-              "body": "{\n    \"user\": {\n        \"id\": \"...\",\n        \"email\": \"john@example.com\",\n        \"displayName\": \"John Doe\",\n        \"role\": \"user\"\n    },\n    \"stats\": {\n        \"totalScans\": 12,\n        \"mostDetectedDisease\": {\n            \"disease\": { \"name\": \"Tomato___Late_blight\" },\n            \"count\": 5\n        }\n    }\n}"
+              "body": "{\n    \"user\": {\n        \"id\": \"...\",\n        \"email\": \"ahmed@example.com\",\n        \"displayName\": \"Ahmed Hassan\",\n        \"role\": \"user\"\n    },\n    \"stats\": {\n        \"totalScans\": 128,\n        \"plantsScanned\": 36,\n        \"mostDetected\": {\n            \"disease\": { \"name\": \"Early Blight\" }\n        }\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Dashboard Data",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got dashboard data', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('greeting');",
+                  "    pm.expect(json).to.have.property('recentDiagnoses');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/dashboard",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "dashboard"]
+            },
+            "description": "Get data for the Home Screen dashboard including greeting, daily tip, and recent diagnoses."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"greeting\": \"Hello, Ahmed 👋\",\n    \"subtitle\": \"How are your plants today?\",\n    \"recentDiagnoses\": [\n        {\n            \"id\": \"...\",\n            \"plantName\": \"Tomato\",\n            \"diseaseName\": \"Late Blight\",\n            \"confidence\": \"92%\",\n            \"imageUrl\": \"...\"\n        }\n    ],\n    \"dailyTip\": {\n        \"title\": \"Daily Tip\",\n        \"content\": \"Water your plants early in the morning for better absorption.\"\n    }\n}"
             }
           ]
         },
@@ -758,6 +800,47 @@
               "path": ["api", "admin", "analytics"]
             },
             "description": "Get system-wide analytics dashboard data.\n\nReturns:\n- Total users, scans, diseases counts\n- Top 5 most detected diseases\n- 10 most recent scans\n\n🔒 **Admin only**"
+          }
+        }
+      ]
+    },
+    {
+      "name": "📚 Knowledge Base",
+      "description": "Article management — browse articles (public) and manage them (admin).",
+      "item": [
+        {
+          "name": "Get Articles (All/Filtered)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/api/articles?category=Science",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles"],
+              "query": [
+                { "key": "category", "value": "Science", "description": "Filter by: Guide, Tips, Organic, Science" },
+                { "key": "search", "value": "soil", "description": "Search by title" }
+              ]
+            },
+            "description": "Public route to browse knowledge base articles."
+          }
+        },
+        {
+          "name": "Admin: Create Article",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"Understanding Soil Health\",\n    \"category\": \"Science\",\n    \"content\": \"Healthy soil is the foundation...\",\n    \"additional_info\": \"LeafGuard AI uses advanced machine learning...\",\n    \"icon\": \"earth\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/articles",
+              "host": ["{{base_url}}"],
+              "path": ["api", "articles"]
+            }
           }
         }
       ]

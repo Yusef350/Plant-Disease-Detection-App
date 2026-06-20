@@ -117,10 +117,13 @@ def analytics():
             s["plantId"] = str(s["plantId"])
         recent_scans.append(s)
 
+    total_articles = db.articles.count_documents({})
+
     return jsonify({
         "totalUsers": total_users,
         "totalScans": total_scans,
         "totalDiseases": total_diseases,
+        "totalArticles": total_articles,
         "topDiseases": top_diseases,
         "recentScans": recent_scans,
     }), 200

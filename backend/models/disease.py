@@ -64,7 +64,7 @@ def count() -> int:
 
 def update_disease(disease_id: str, data: dict) -> dict | None:
     allowed = {
-        "name", "description", "symptoms", "causes",
+        "name", "scientific_name", "description", "symptoms", "causes",
         "treatment", "prevention", "severity", "imageUrl",
     }
     updates = {k: v for k, v in data.items() if k in allowed}

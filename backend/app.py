@@ -14,6 +14,7 @@ from routes.scans import scans_bp
 from routes.diseases import diseases_bp
 from routes.users import users_bp
 from routes.admin import admin_bp
+from routes.articles import articles_bp
 
 
 def create_app() -> Flask:

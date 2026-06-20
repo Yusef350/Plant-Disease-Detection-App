@@ -86,3 +86,15 @@ def get_most_detected_disease(user_id: str) -> dict | None:
     if disease:
         return {"disease": d_serialize(disease), "count": results[0]["count"]}
     return None
+
+
+def get_unique_plants_count(user_id: str) -> int:
+    """Returns the number of unique plant types this user has scanned."""
+    db = get_db()
+    pipeline = [
+        {"$match": {"userId": ObjectId(user_id)}},
+        {"$group": {"_id": "$plantName"}},
+        {"$count": "unique_plants"},
+    ]
+    result = list(db.scans.aggregate(pipeline))
+    return result[0]["unique_plants"] if result else 0

@@ -68,17 +68,22 @@ def create_scan():
         is_healthy=prediction["isHealthy"],
     )
 
-    # 7. Attach disease details if available
-    disease_info = None
+    # 7. Attach disease details    # Join disease details
+    disease_data = None
     if disease_doc:
-        disease_info = disease_model.serialize(disease_doc)
+        disease_data = disease_model.serialize(disease_doc)
 
-    return jsonify({
-        "scan": scan,
-        "diagnosis": diagnosis,
-        "prediction": prediction,
-        "disease": disease_info,
-    }), 201
+    return (
+        jsonify(
+            {
+                "scan": scan,
+                "diagnosis": diagnosis,
+                "prediction": prediction,
+                "disease": disease_data,
+            }
+        ),
+        201,
+    )
 
 
 # ── GET /api/scans — list user's scan history ─────────────────────────
