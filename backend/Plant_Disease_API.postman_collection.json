@@ -1,0 +1,800 @@
+{
+  "info": {
+    "name": "🌿 Plant Disease Detection API",
+    "description": "Complete API collection for the Plant Disease Detection backend.\n\n## Setup\n1. Set the `base_url` variable to your server (default: http://127.0.0.1:5000)\n2. Run **Register** or **Login** first — the token is auto-saved\n3. All authenticated requests use the token automatically\n\n## Workflow\n1. Register → Login\n2. Upload Scan (with image)\n3. View History / Scan Detail\n4. Browse Diseases\n5. View/Edit Profile",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://127.0.0.1:5000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "scan_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "disease_id",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Auth",
+      "description": "Authentication endpoints — register, login, and get current user.",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('user_id', json.user.id);",
+                  "    pm.test('Registration successful', function () {",
+                  "        pm.expect(json.user).to.have.property('id');",
+                  "        pm.expect(json).to.have.property('token');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"displayName\": \"John Doe\",\n    \"email\": \"john@example.com\",\n    \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "Create a new user account.\n\n**Validation:**\n- `displayName`: min 2 characters\n- `email`: valid email format, must be unique\n- `password`: min 6 characters\n\n**Auto-saves** the JWT token for subsequent requests."
+          },
+          "response": [
+            {
+              "name": "201 — Success",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n    \"user\": {\n        \"id\": \"6655...\",\n        \"email\": \"john@example.com\",\n        \"displayName\": \"John Doe\",\n        \"role\": \"user\",\n        \"createdAt\": \"...\",\n        \"lastLoginAt\": \"...\"\n    },\n    \"token\": \"eyJhbGci...\"\n}"
+            },
+            {
+              "name": "409 — Email exists",
+              "status": "Conflict",
+              "code": 409,
+              "body": "{\n    \"error\": \"Email already registered\"\n}"
+            },
+            {
+              "name": "400 — Validation error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n    \"error\": \"Valid email is required\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('token', json.token);",
+                  "    pm.collectionVariables.set('user_id', json.user.id);",
+                  "    pm.test('Login successful', function () {",
+                  "        pm.expect(json).to.have.property('token');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"email\": \"john@example.com\",\n    \"password\": \"SecurePass123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Authenticate and receive a JWT token (valid for 72 hours).\n\n**Auto-saves** the JWT token for subsequent requests."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"user\": { \"id\": \"...\", \"email\": \"...\", \"displayName\": \"...\" },\n    \"token\": \"eyJhbGci...\"\n}"
+            },
+            {
+              "name": "401 — Invalid credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n    \"error\": \"Invalid email or password\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got current user', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('id');",
+                  "    pm.expect(json.user).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "Get the currently authenticated user's info.\n\nRequires a valid JWT in the Authorization header."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"user\": {\n        \"id\": \"...\",\n        \"email\": \"john@example.com\",\n        \"displayName\": \"John Doe\",\n        \"role\": \"user\"\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "📸 Scans",
+      "description": "Scan endpoints — upload plant images for AI diagnosis, view history.",
+      "item": [
+        {
+          "name": "Upload Scan (AI Diagnosis)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('scan_id', json.scan.id);",
+                  "    pm.test('Scan created with diagnosis', function () {",
+                  "        pm.expect(json.scan).to.have.property('id');",
+                  "        pm.expect(json.prediction).to.have.property('className');",
+                  "        pm.expect(json.prediction).to.have.property('confidence');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select a plant leaf image (JPG/PNG)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{base_url}}/api/scans",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scans"]
+            },
+            "description": "Upload a plant leaf image for AI-powered disease detection.\n\n**Flow:**\n1. Image is uploaded to storage (Cloudinary or local)\n2. AI model runs inference (38 classes)\n3. Scan + Diagnosis records are saved to DB\n4. Full result returned with disease details\n\n**Body:** `multipart/form-data` with field `image`"
+          },
+          "response": [
+            {
+              "name": "201 — Diagnosis complete",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n    \"scan\": { \"id\": \"...\", \"imageUrl\": \"...\", \"status\": \"completed\" },\n    \"diagnosis\": { \"confidence\": 0.9723, \"isHealthy\": false },\n    \"prediction\": {\n        \"className\": \"Tomato___Late_blight\",\n        \"plantName\": \"Tomato\",\n        \"diseaseName\": \"Late blight\",\n        \"confidence\": 0.9723,\n        \"isHealthy\": false\n    },\n    \"disease\": {\n        \"name\": \"Tomato___Late_blight\",\n        \"description\": \"...\",\n        \"treatment\": \"...\"\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "List Scan History",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got scan list', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('scans');",
+                  "    pm.expect(json).to.have.property('total');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scans?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scans"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1",
+                  "description": "Page number (default: 1)"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20",
+                  "description": "Items per page (default: 20)"
+                }
+              ]
+            },
+            "description": "Get paginated scan history for the current user.\n\nEach scan includes its diagnosis and disease details."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"scans\": [\n        {\n            \"id\": \"...\",\n            \"imageUrl\": \"...\",\n            \"status\": \"completed\",\n            \"createdAt\": \"...\",\n            \"diagnosis\": { \"confidence\": 0.95, \"isHealthy\": false },\n            \"disease\": { \"name\": \"...\", \"description\": \"...\" }\n        }\n    ],\n    \"total\": 5,\n    \"page\": 1,\n    \"perPage\": 20\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Scan Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got scan detail', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.scan).to.have.property('id');",
+                  "    pm.expect(json.scan).to.have.property('diagnosis');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/scans/{{scan_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "scans", "{{scan_id}}"]
+            },
+            "description": "Get full details for a specific scan.\n\nIncludes: scan info, diagnosis, disease details, and plant info.\n\n**Access:** Owner only (or admin)."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"scan\": {\n        \"id\": \"...\",\n        \"imageUrl\": \"...\",\n        \"diagnosis\": { \"confidence\": 0.97 },\n        \"disease\": { \"name\": \"...\", \"treatment\": \"...\" },\n        \"plant\": { \"commonName\": \"Tomato\" }\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🌱 Diseases",
+      "description": "Disease knowledge base — browse all 38 plant diseases (public, no auth required).",
+      "item": [
+        {
+          "name": "List All Diseases",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got disease list', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.diseases).to.be.an('array');",
+                  "    pm.expect(json.total).to.be.above(0);",
+                  "    if (json.diseases.length > 0) {",
+                  "        pm.collectionVariables.set('disease_id', json.diseases[0].id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diseases?page=1&per_page=50",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diseases"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "List all diseases in the knowledge base.\n\n**Public endpoint** — no authentication required.\n\nAuto-saves the first disease ID for the detail request."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"diseases\": [\n        {\n            \"id\": \"...\",\n            \"name\": \"Apple___Apple_scab\",\n            \"description\": \"...\",\n            \"symptoms\": \"...\",\n            \"causes\": \"...\",\n            \"treatment\": \"...\",\n            \"prevention\": \"...\",\n            \"severity\": \"medium\"\n        }\n    ],\n    \"total\": 38,\n    \"page\": 1,\n    \"perPage\": 50\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Disease Detail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got disease detail', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.disease).to.have.property('name');",
+                  "    pm.expect(json.disease).to.have.property('description');",
+                  "    pm.expect(json.disease).to.have.property('treatment');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/diseases/{{disease_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "diseases", "{{disease_id}}"]
+            },
+            "description": "Get full details for a specific disease.\n\nIncludes: name, description, symptoms, causes, treatment, prevention, and severity.\n\n**Public endpoint** — no authentication required."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"disease\": {\n        \"id\": \"...\",\n        \"name\": \"Tomato___Late_blight\",\n        \"description\": \"Late blight is caused by...\",\n        \"symptoms\": \"Water-soaked grey spots...\",\n        \"causes\": \"Oomycete Phytophthora infestans...\",\n        \"treatment\": \"Apply protectant fungicides...\",\n        \"prevention\": \"Plant certified disease-free...\",\n        \"severity\": \"high\"\n    }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "👤 User Profile",
+      "description": "User profile management — view stats, update info, change password.",
+      "item": [
+        {
+          "name": "Get Profile & Stats",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got profile with stats', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user).to.have.property('displayName');",
+                  "    pm.expect(json.stats).to.have.property('totalScans');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Get the current user's profile along with statistics:\n- Total scans count\n- Most frequently detected disease"
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"user\": {\n        \"id\": \"...\",\n        \"email\": \"john@example.com\",\n        \"displayName\": \"John Doe\",\n        \"role\": \"user\"\n    },\n    \"stats\": {\n        \"totalScans\": 12,\n        \"mostDetectedDisease\": {\n            \"disease\": { \"name\": \"Tomato___Late_blight\" },\n            \"count\": 5\n        }\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Profile updated', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.user.displayName).to.equal('John Updated');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"displayName\": \"John Updated\",\n    \"email\": \"john.updated@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "profile"]
+            },
+            "description": "Update the current user's display name and/or email.\n\nOnly `displayName` and `email` fields are accepted."
+          },
+          "response": [
+            {
+              "name": "200 — Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"user\": {\n        \"id\": \"...\",\n        \"displayName\": \"John Updated\",\n        \"email\": \"john.updated@example.com\"\n    }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Password changed', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.message).to.include('success');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"currentPassword\": \"SecurePass123\",\n    \"newPassword\": \"NewSecurePass456\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/password",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "password"]
+            },
+            "description": "Change the current user's password.\n\nRequires the current password for verification."
+          },
+          "response": [
+            {
+              "name": "200 — Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n    \"message\": \"Password updated successfully\"\n}"
+            },
+            {
+              "name": "401 — Wrong current password",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n    \"error\": \"Current password is incorrect\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "🛡️ Admin",
+      "description": "Admin-only endpoints — manage users, diseases, and view analytics.\n\nRequires a user with `role: \"admin\"` in the database.",
+      "item": [
+        {
+          "name": "List All Users",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got user list', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.users).to.be.an('array');",
+                  "    pm.expect(json).to.have.property('total');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users?page=1&per_page=20",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "per_page",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "List all registered users (paginated).\n\n🔒 **Admin only** — returns 403 for non-admin users."
+          }
+        },
+        {
+          "name": "Create Disease",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('disease_id', json.disease.id);",
+                  "    pm.test('Disease created', function () {",
+                  "        pm.expect(json.disease).to.have.property('id');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"New_Disease_Name\",\n    \"description\": \"Description of the disease\",\n    \"symptoms\": \"List of symptoms\",\n    \"causes\": \"What causes this disease\",\n    \"treatment\": \"How to treat it\",\n    \"prevention\": \"How to prevent it\",\n    \"severity\": \"medium\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/diseases",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "diseases"]
+            },
+            "description": "Add a new disease to the knowledge base.\n\n🔒 **Admin only**"
+          }
+        },
+        {
+          "name": "Update Disease",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"description\": \"Updated description\",\n    \"treatment\": \"Updated treatment info\",\n    \"severity\": \"high\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/diseases/{{disease_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "diseases", "{{disease_id}}"]
+            },
+            "description": "Update an existing disease entry.\n\nOnly specified fields are updated (partial update).\n\n🔒 **Admin only**"
+          }
+        },
+        {
+          "name": "Delete Disease",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/diseases/{{disease_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "diseases", "{{disease_id}}"]
+            },
+            "description": "Delete a disease from the knowledge base.\n\n🔒 **Admin only**"
+          }
+        },
+        {
+          "name": "System Analytics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Got analytics', function () {",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json).to.have.property('totalUsers');",
+                  "    pm.expect(json).to.have.property('totalScans');",
+                  "    pm.expect(json).to.have.property('topDiseases');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/analytics",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "analytics"]
+            },
+            "description": "Get system-wide analytics dashboard data.\n\nReturns:\n- Total users, scans, diseases counts\n- Top 5 most detected diseases\n- 10 most recent scans\n\n🔒 **Admin only**"
+          }
+        }
+      ]
+    },
+    {
+      "name": "❤️ Health",
+      "description": "Server health check endpoint.",
+      "item": [
+        {
+          "name": "Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Server is healthy', function () {",
+                  "    pm.expect(pm.response.code).to.equal(200);",
+                  "    var json = pm.response.json();",
+                  "    pm.expect(json.status).to.equal('ok');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            },
+            "description": "Simple health check — returns 200 if the server is running."
+          }
+        }
+      ]
+    }
+  ]
+}

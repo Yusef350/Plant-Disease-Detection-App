@@ -1,0 +1,25 @@
+# Flask core
+Flask==3.1.1
+flask-cors==5.0.1
+
+# MongoDB
+pymongo[srv]==4.12.1
+dnspython==2.7.0
+
+# Auth
+PyJWT==2.10.1
+bcrypt==4.3.0
+
+# AI / ML
+tensorflow==2.18.0
+numpy==1.26.4
+Pillow==11.1.0
+
+# Image storage
+cloudinary==1.41.0
+
+# Env
+python-dotenv==1.1.0
+
+# Validation
+marshmallow==3.25.1
