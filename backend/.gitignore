@@ -18,7 +18,6 @@ env/
 uploads/
 
 # TF model (too large for git)
-*.keras
 *.h5
 
 # IDE
