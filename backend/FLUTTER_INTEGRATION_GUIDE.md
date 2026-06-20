@@ -141,14 +141,18 @@ class ApiConstants {
   static const String me       = '/api/auth/me';
 
   // Scans
-  static const String scans    = '/api/scans';
+  static const String scans     = '/api/scans';
 
   // Diseases
-  static const String diseases = '/api/diseases';
+  static const String diseases  = '/api/diseases';
+
+  // Knowledge Base
+  static const String articles  = '/api/articles';
 
   // User
-  static const String profile  = '/api/users/profile';
-  static const String password = '/api/users/password';
+  static const String profile   = '/api/users/profile';
+  static const String dashboard = '/api/users/dashboard';
+  static const String password  = '/api/users/password';
 
   // Health
   static const String health   = '/api/health';
@@ -408,15 +412,21 @@ class AuthResponse {
 
 class UserStats {
   final int totalScans;
+  final int plantsScanned;
   final MostDetectedDisease? mostDetectedDisease;
 
-  UserStats({required this.totalScans, this.mostDetectedDisease});
+  UserStats({
+    required this.totalScans,
+    required this.plantsScanned,
+    this.mostDetectedDisease,
+  });
 
   factory UserStats.fromJson(Map<String, dynamic> json) {
     return UserStats(
       totalScans: json['totalScans'] ?? 0,
-      mostDetectedDisease: json['mostDetectedDisease'] != null
-          ? MostDetectedDisease.fromJson(json['mostDetectedDisease'])
+      plantsScanned: json['plantsScanned'] ?? 0,
+      mostDetectedDisease: json['mostDetected'] != null
+          ? MostDetectedDisease.fromJson(json['mostDetected'])
           : null,
     );
   }
@@ -441,19 +451,15 @@ class MostDetectedDisease {
 
 ```dart
 class DiseaseModel {
-  final String id;
-  final String name;
-  final String description;
-  final String symptoms;
-  final String causes;
-  final String treatment;
-  final String prevention;
-  final String severity;
+  final String scientificName;
+  final List<String> prevention;
   final String? imageUrl;
+  final String severity;
 
   DiseaseModel({
     required this.id,
     required this.name,
+    required this.scientificName,
     required this.description,
     required this.symptoms,
     required this.causes,
@@ -467,11 +473,12 @@ class DiseaseModel {
     return DiseaseModel(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
+      scientificName: json['scientific_name'] ?? 'Species unknown',
       description: json['description'] ?? '',
       symptoms: json['symptoms'] ?? '',
-      causes: json['causes'] ?? '',
-      treatment: json['treatment'] ?? '',
-      prevention: json['prevention'] ?? '',
+      causes: json['causes'] is List ? List<String>.from(json['causes']) : [],
+      treatment: json['treatment'] is List ? List<String>.from(json['treatment']) : [],
+      prevention: json['prevention'] is List ? List<String>.from(json['prevention']) : [],
       severity: json['severity'] ?? 'medium',
       imageUrl: json['imageUrl'],
     );
