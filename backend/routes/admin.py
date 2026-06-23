@@ -31,6 +31,53 @@ def list_users():
     }), 200
 
 
+@admin_bp.route("/users/<user_id>", methods=["GET"])
+@require_admin
+def get_user(user_id):
+    doc = user_model.find_by_id(user_id)
+    if not doc:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"user": user_model.serialize(doc)}), 200
+
+
+@admin_bp.route("/users", methods=["POST"])
+@require_admin
+def create_user():
+    data = request.get_json(silent=True) or {}
+    display_name = data.get("displayName")
+    email = data.get("email")
+    password = data.get("password")
+    role = data.get("role", "user")
+
+    if not all([display_name, email, password]):
+        return jsonify({"error": "displayName, email, and password are required"}), 400
+
+    if user_model.find_by_email(email):
+        return jsonify({"error": "Email already registered"}), 400
+
+    user = user_model.create_user(display_name, email, password, role)
+    return jsonify({"user": user}), 201
+
+
+@admin_bp.route("/users/<user_id>", methods=["PUT"])
+@require_admin
+def update_user(user_id):
+    data = request.get_json(silent=True) or {}
+    doc = user_model.admin_update_user(user_id, data)
+    if not doc:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"user": user_model.serialize(doc)}), 200
+
+
+@admin_bp.route("/users/<user_id>", methods=["DELETE"])
+@require_admin
+def delete_user(user_id):
+    success = user_model.delete_user(user_id)
+    if not success:
+        return jsonify({"error": "User not found"}), 404
+    return jsonify({"message": "User deleted successfully"}), 200
+
+
 # ── POST /api/admin/diseases — create a disease entry ─────────────────
 
 

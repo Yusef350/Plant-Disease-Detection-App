@@ -38,13 +38,13 @@ def serialize(doc: dict) -> dict:
 # ── CRUD ─────────────────────────────────────────────────────────────────
 
 
-def create_user(display_name: str, email: str, password: str) -> dict:
+def create_user(display_name: str, email: str, password: str, role: str = "user") -> dict:
     now = datetime.now(timezone.utc)
     doc = {
         "email": email.lower().strip(),
         "passwordHash": hash_password(password),
         "displayName": display_name.strip(),
-        "role": "user",  # "user" | "admin"
+        "role": role,  # "user" | "admin"
         "createdAt": now,
         "lastLoginAt": now,
     }
@@ -108,3 +108,22 @@ def list_all_users(page: int = 1, per_page: int = 20) -> list[dict]:
 
 def count_users() -> int:
     return _col().count_documents({})
+
+
+def delete_user(user_id: str) -> bool:
+    result = _col().delete_one({"_id": ObjectId(user_id)})
+    return result.deleted_count == 1
+
+
+def admin_update_user(user_id: str, data: dict) -> dict | None:
+    """Admin specialized update — allows changing role, etc."""
+    allowed = {"displayName", "email", "role"}
+    updates = {k: v for k, v in data.items() if k in allowed and v is not None}
+    if "email" in updates:
+        updates["email"] = updates["email"].lower().strip()
+    if "role" in updates and updates["role"] not in ["user", "admin"]:
+        del updates["role"]
+    if not updates:
+        return find_by_id(user_id)
+    _col().update_one({"_id": ObjectId(user_id)}, {"$set": updates})
+    return find_by_id(user_id)

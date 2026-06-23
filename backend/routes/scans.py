@@ -32,23 +32,20 @@ def create_scan():
     if len(image_bytes) == 0:
         return jsonify({"error": "Empty file"}), 400
 
-    # 1. Upload image to storage
     try:
         image_url = storage_service.upload_image(image_bytes, file.filename)
     except Exception as e:
         return jsonify({"error": f"Image upload failed: {str(e)}"}), 500
 
-    # 2. Run AI inference
     try:
         prediction = ai_service.predict(image_bytes)
     except Exception as e:
         return jsonify({"error": f"AI inference failed: {str(e)}"}), 500
 
-    # 3. Resolve plant reference
     plant_doc = plant_model.find_by_name(prediction["plantName"])
     plant_id = str(plant_doc["_id"]) if plant_doc else None
 
-    # 4. Save scan
+
     scan = scan_model.create_scan(
         user_id=g.user_id,
         image_url=image_url,
@@ -56,11 +53,9 @@ def create_scan():
         status="completed",
     )
 
-    # 5. Resolve disease reference
     disease_doc = disease_model.find_by_name(prediction["className"])
     disease_id = str(disease_doc["_id"]) if disease_doc else None
 
-    # 6. Save diagnosis
     diagnosis = diagnosis_model.create_diagnosis(
         scan_id=scan["id"],
         disease_id=disease_id,
@@ -68,7 +63,6 @@ def create_scan():
         is_healthy=prediction["isHealthy"],
     )
 
-    # 7. Attach disease details    # Join disease details
     disease_data = None
     if disease_doc:
         disease_data = disease_model.serialize(disease_doc)

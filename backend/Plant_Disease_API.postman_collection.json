@@ -650,6 +650,9 @@
                   "    var json = pm.response.json();",
                   "    pm.expect(json.users).to.be.an('array');",
                   "    pm.expect(json).to.have.property('total');",
+                  "    if (json.users.length > 0) {",
+                  "        pm.collectionVariables.set('user_id', json.users[0].id);",
+                  "    }",
                   "});"
                 ]
               }
@@ -678,7 +681,113 @@
                 }
               ]
             },
-            "description": "List all registered users (paginated).\n\n🔒 **Admin only** — returns 403 for non-admin users."
+            "description": "List all registered users (paginated).\n\n🔒 **Admin only** — returns 403 for non-admin users.\n\nAuto-saves the first user ID for detail requests."
+          }
+        },
+        {
+          "name": "Create User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.response.code === 201) {",
+                  "    var json = pm.response.json();",
+                  "    pm.collectionVariables.set('user_id', json.user.id);",
+                  "    pm.test('User created successfully', function () {",
+                  "        pm.expect(json.user).to.have.property('id');",
+                  "        pm.expect(json.user.role).to.equal(pm.request.body.json().role || 'user');",
+                  "    });",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"displayName\": \"Admin Created User\",\n    \"email\": \"admin_created@example.com\",\n    \"password\": \"TemporaryPass123\",\n    \"role\": \"user\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users"]
+            },
+            "description": "Create a new user with a specific role.\n\n🔒 **Admin only**\n\n**Body:**\n- `role`: \"user\" | \"admin\""
+          }
+        },
+        {
+          "name": "Get User Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Get full details for a specific user.\n\n🔒 **Admin only**"
+          }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"displayName\": \"Updated Name\",\n    \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Update a user's profile and role.\n\n🔒 **Admin only**"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "users", "{{user_id}}"]
+            },
+            "description": "Permanently delete a user.\n\n🔒 **Admin only**"
           }
         },
         {
